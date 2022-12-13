@@ -190,7 +190,7 @@ bool muro_nord()    // ritorna se c'è un muro a NORD
     t1 = tof_read(4);
     break;
   }
-  printf("")
+  printf("");
   return t0<255 || t1<255;
 }
 
@@ -411,8 +411,6 @@ void found_victim(int kits)//o 1 kit o niente
 {
   if(kits)
   {
-      //TODO girati di 90, smolla e rigirati
-
       //lampeggia il led
       digitalWrite(3, HIGH);
       delay(1000);
@@ -422,10 +420,59 @@ void found_victim(int kits)//o 1 kit o niente
       delay(1000);
       digitalWrite(3, LOW);
 
-      //TODO capire da che lato è la vittima
-
-      //si gira di 90
-      gira_destra();
+      //memorizza la direzione in cui si è girato
+      //1 destra, 2 sinistra, 3 180 gradi
+      int turn = 0;
+      switch(dir){
+        case 0:
+          if(muro_nord()){
+            gira_destra();
+            turn = 1;
+          }else if(muro_est()){
+            gira_180();
+            turn = 3;
+          }else if(muro_sud()){
+            gira_sinistra();
+            turn = 2;
+          }
+          break;
+        case 1:
+          if(muro_nord()){
+            gira_180();
+            turn 3;
+          }else if(muro_est()){
+            gira_sinistra();
+            turn = 2;
+          }else if(muro_ovest()){
+            gira_destra();
+            turn 1;
+          }
+          break;
+        case 2:
+          if(muro_nord()){
+            gira_sinistra();
+            turn = 2;
+          }else if(muro_ovest()){
+            gira_180();
+            turn = 3;
+          }else if(muro_sud()){
+            gira_destra();
+            turn = 1;
+          }
+          break;
+        case 3:
+          if(muro_sud()){
+            gira_180();
+            turn = 3;
+          }else if(muro_ovest()){
+            gira_sinistra();
+            turn = 2;
+          }else if(muro_est()){
+            gira_destra();
+            turn = 1;
+          }
+          break;
+      }
 
       //smolla il/i kit
       if(conta_kit%2 == 0)
@@ -448,8 +495,17 @@ void found_victim(int kits)//o 1 kit o niente
       delay(500);
       servo_kit.write(95);//riallinea il servo
 
-      //si gira di 90
-      gira_sinistra();
+      switch(turn){
+        case 1:
+          gira_sinistra();
+          break;
+        case 2:
+          gira_destra();
+          break;
+        case 3:
+          gira_180();
+          break;
+      }
       
       digitalWrite(3, HIGH);//altro lampeggio
 

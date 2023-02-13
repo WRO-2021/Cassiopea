@@ -3,11 +3,12 @@
 
 #include <Arduino.h>
 #include <Adafruit_MLX90614.h>
-#include <Servo.h>
+
 #include <Adafruit_TCS34725.h>
 #include "motors.h"
 #include "movements.h"
 #include "tof.h"
+#include "kit.h"
 
 #define LED_R 22
 #define LED_G 23

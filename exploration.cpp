@@ -541,47 +541,11 @@ bool esplora() {
         } else {
 
             while (dir_scan < 4 && !trovato) {
-                switch ((dir + (6 - dir_scan) + 3) % 4)//direzione robot + direzione scan
-                {
-                    case 0:
-                        if (campo[posx + 1][posy] != 'w' && campo[posx + 2][posy] ==
-                                                            '?') // priority O se non c'è muro in questa direzione  E  se la casella da quella è sconosciuta
-                        {
-                            trovato = true;
-                        } else {
-                            dir_scan++;
-                        }
-                        break;
-
-                    case 1:
-                        if (campo[posx][posy + 1] != 'w' && campo[posx][posy + 2] ==
-                                                            '?') // se non c'è muro in questa direzione  E  se la casella da quella è sconosciuta
-                        {
-                            trovato = true;
-                        } else {
-                            dir_scan++;
-                        }
-                        break;
-
-                    case 2:
-                        if (campo[posx - 1][posy] != 'w' && campo[posx - 2][posy] ==
-                                                            '?') // se non c'è muro in questa direzione  E  se la casella da quella è sconosciuta
-                        {
-                            trovato = true;
-                        } else {
-                            dir_scan++;
-                        }
-                        break;
-
-                    case 3:
-                        if (campo[posx][posy - 1] != 'w' && campo[posx][posy - 2] ==
-                                                            '?') // se non c'è muro in questa direzione  E  se la casella da quella è sconosciuta
-                        {
-                            trovato = true;
-                        } else {
-                            dir_scan++;
-                        }
-                        break;
+                int tmp_dir = (dir + (6 - dir_scan) + 3) % 4;
+                if (campo[posx + ix(tmp_dir)][posy + iy(tmp_dir)] == 'w' && campo[posx + 2 * ix(tmp_dir)][posy + 2 * iy(tmp_dir)] == '?') {
+                    trovato = true;
+                } else {
+                    dir_scan++;
                 }
             }
             dir_scan = (6 - dir_scan) % 4;
@@ -598,21 +562,7 @@ bool esplora() {
                     return false;//Nessun percorso per s trovato
             }
         } else {
-
-            switch (dir_scan % 4) {
-                case 0:
-                    gira_destra();
-                    break;
-                case 1:
-                    //spostare avanti() qui (togliendolo sotto) dovrebbe far scannerizzare anche dopo aver girato
-                    break;
-                case 2:
-                    gira_sinistra();
-                    break;
-                case 3:
-                    gira_180();
-                    break;
-            }
+            gira(dir_scan % 4);
             avanti();
         }
     }

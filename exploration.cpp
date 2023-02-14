@@ -100,6 +100,8 @@ void campo_init()// initialization of maze values
     for (int i = 0; i < dim_campo; i++) {
         for (int j = 0; j < dim_campo; j++) {
             campo[i][j] = 0;   // inizializza il campo a 0 (sconosciuto)
+            if (i%2 == 1 && j%2 == 1)
+                campo[i][j] = 'w'; // angoli delle celle
         }
     }
 
@@ -107,7 +109,7 @@ void campo_init()// initialization of maze values
 
     posx = dim_campo / 2;          // inizializza la posizione su start
     posy = dim_campo / 2;
-    dir = 1;                   // e direzione a nord
+    dir = 0;                   // e direzione a nord
 
     checkx = posx; // ultimo checkpoint è la partenza (all'inizio)
     checky = posy;
@@ -150,9 +152,6 @@ bool muro_rel(int rel) {
 
 void scan_neighbors() // legge i sensori e modifica la mappa in base a questi
 {
-
-
-
     // piastrella attuale nuova, controllo sotto
     if (campo[posx][posy] == '?') // se il tile/piastrella non era ancora stata esplorata
     {
@@ -164,7 +163,6 @@ void scan_neighbors() // legge i sensori e modifica la mappa in base a questi
         } else {
             campo[posx][posy] = 'e'; // viene segnata come vuota
         }
-
     }
 
     // scannerizza i quattro muri
@@ -181,13 +179,10 @@ void scan_neighbors() // legge i sensori e modifica la mappa in base a questi
             if (campo[posx + ix(d)][posy + iy(d)] != 'p')    // se non è priorità (va modificata solo al passaggio)
                 campo[posx + ix(d)][posy + iy(d)] = 'e';    // impostata a vuota (no muro)
 
-            if (campo[posx + ix(d) * 2][posy + iy(d) * 2] == 0)      // cella successiva // se è sconosciuta
-                campo[posx + ix(d) * 2][posy + iy(d) *
-                                               2] = '?';    // impostata a inesplorata (non c'è muro quindi ci si può andare MA non è esplorata)
+            if (campo[posx + ix(d) * 2][posy + iy(d) *2] == 0)      // cella successiva // se è sconosciuta
+                campo[posx + ix(d) * 2][posy + iy(d) *2] = '?';    // impostata a inesplorata (non c'è muro quindi ci si può andare MA non è esplorata)
         }
     }
-
-
     if (campo[posx][posy] == 'c') {
         digitalWrite(LED_BUILTIN, HIGH);
     } else {
@@ -206,78 +201,22 @@ void found_victim(int kits)//o 1 kit o niente
     }
 
     if (kits) {
-
         //memorizza la direzione in cui si è girato
         //1 destra, 2 sinistra, 3 180 gradi
         int turn = 0;
-        switch (dir) {
-            case 0:
-                if (muro_nord()) {
-                    gira_destra();
-                    turn = 1;
-                } else if (muro_est()) {
-                    gira_180();
-                    turn = 3;
-                } else if (muro_sud()) {
-                    gira_sinistra();
-                    turn = 2;
-                }
-                break;
-            case 1:
-                if (muro_nord()) {
-                    gira_180();
-                    turn
-                    3;
-                } else if (muro_est()) {
-                    gira_sinistra();
-                    turn = 2;
-                } else if (muro_ovest()) {
-                    gira_destra();
-                    turn
-                    1;
-                }
-                break;
-            case 2:
-                if (muro_nord()) {
-                    gira_sinistra();
-                    turn = 2;
-                } else if (muro_ovest()) {
-                    gira_180();
-                    turn = 3;
-                } else if (muro_sud()) {
-                    gira_destra();
-                    turn = 1;
-                }
-                break;
-            case 3:
-                if (muro_sud()) {
-                    gira_180();
-                    turn = 3;
-                } else if (muro_ovest()) {
-                    gira_sinistra();
-                    turn = 2;
-                } else if (muro_est()) {
-                    gira_destra();
-                    turn = 1;
-                }
-                break;
+        //cerca un muro e gira in quella direzione
+        for (int i = 0; i < 4; i++) {
+            if (muro_rel(i)) {
+                gira((i + 2)%4); // si gira dall'altra
+                turn = i;
+            }
         }
 
         //smolla il/i kit
-        drop_kits(1);
+        drop_kits(kits);
 
-        switch (turn) {
-            case 1:
-                gira_sinistra();
-                break;
-            case 2:
-                gira_destra();
-                break;
-            case 3:
-                gira_180();
-                break;
-        }
-        conta_kit++;//ho usato un kit
+        gira(turn)
+        conta_kit += kits;//ho usato un kit
     }
 }
 
@@ -363,10 +302,10 @@ void gira_180() {
 
 void gira(int direction){
     switch (direction) {
-        case 0:
+        case 1:
             gira_destra();
             break;
-        case 1:
+        case 3:
             gira_sinistra();
             break;
         case 2:

@@ -8,14 +8,14 @@
 static VL6180X sensor[7];
 
 static int tof_offset[] = {
-  0,//bbboh
-  -93,
-  -97,
-  -65,
-  -63,
-  -94,
-  -102,
-  -75
+        0,//bbboh
+        -93,
+        -97,
+        -65,
+        -63,
+        -94,
+        -102,
+        -75
 };
 
 void MUX(uint8_t bus) {

@@ -18,14 +18,21 @@
 void motor_init();
 
 void motor_set_speed_A(uint8_t vel);
+
 void motor_set_speed_B(uint8_t vel);
+
 void motor_set_speed_both(uint8_t vel);
 
 void motor_left();
+
 void motor_right();
+
 void motor_backward();
+
 void motor_straight();
+
 void motor_stop();
+
 void motor_break();
 
 #endif

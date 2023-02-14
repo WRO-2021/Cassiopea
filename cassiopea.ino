@@ -70,14 +70,27 @@ void setup() {
 }
 
 bool finito = false;
+
 void loop() {
     while (!finito) {
-        if (digitalRead(12)){
+        if (digitalRead(12) == HIGH) {
+            // pulsante lack of progress
+            motor_break();
+            digitalWrite(2, HIGH);
+            delay(2000); //pausa di sicurezza (no doppi click ecc...)
 
+            while (digitalRead(12) == LOW); //attendo che il pulsante venga rischiacciato
 
-            //in case of lack of progress
-            digitalWrite(LED_BUILTIN, LOW);
-            esplora();
+            digitalWrite(2, LOW);
+            delay(1800); //pausa di sicurezza (non parte mentre si sta ancora toccando)
+
+            digitalWrite(2, HIGH);
+            delay(200);
+            digitalWrite(2, LOW);
+
+            posx = checkx;
+            posy = checky;
+            dir = 0;
         }
 
     }

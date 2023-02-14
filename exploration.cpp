@@ -12,6 +12,14 @@
 
 
 /*
+ *
+ * Direzioni:
+ * 0 : nord -davanti
+ * 1 : est - destra
+ * 2 : sud - dietro
+ * 3 : ovest - sinistra
+ *
+ *
 contenuto campo:
 
 0 : not mapped
@@ -31,8 +39,6 @@ avanti - straight
 dietro - back
 */
 
-#define VA_A_DESTRA false //true for follow the right wall, false for the left wall
-
 
 static Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X); //color sensor
 static Adafruit_MLX90614 mlx = Adafruit_MLX90614(); //temperature sensor
@@ -47,78 +53,42 @@ static char campo[100][100]; // campo means maze, that's the map
 static int dim_campo;      // dimensione dell'array campo
 static int posx, posy;     // posizione x, posizione y
 // 0,0 basso sinistra
-static int dir;            // direzione 0 est, 1 nord, 2 ovest, 3 sud
+static int dir;//direzione in cui guarda il robot            // direzione 0 est, 1 nord, 2 ovest, 3 sud notazine di stafano, è cambiata
 
-//prints on serial a "graphic" visualization of the mapped maze
-void campo_stampa() {
-    int i1 = 0;
-    int i2 = dim_campo - 1;
-    int j1 = 0;
-    int j2 = dim_campo - 1;
-    int i, j;
-    i = 0;
-    bool c = true;//clear
-    while (c) {
-        for (j = 0; j < dim_campo; j++) {
-            if (campo[i1][j])
-                c = false;
-        }
-        if (c)
-            i1++;
-    }
-    c = true;
-    while (c) {
-        for (j = 0; j < dim_campo; j++) {
-            if (campo[i2][j])
-                c = false;
-        }
-        if (c)
-            i2--;
-    }
 
-    c = true;//clear
-    while (c) {
-        for (i = 0; i < dim_campo; i++) {
-            if (campo[i][j1])
-                c = false;
-        }
-        if (c)
-            j1++;
-    }
-    c = true;
-    while (c) {
-        for (i = 0; i < dim_campo; i++) {
-            if (campo[i][j2])
-                c = false;
-        }
-        if (c)
-            j2--;
-    }
-
-    for (i = i1; i <= i2; i++) {
-        for (j = j1; j <= j2; j++) {
-            //Serial.print((campo[i][j])?campo[i][j]:' ');   // inizializza il campo a 0 (sconosciuto)
-            switch (campo[i][j]) {
-                case 0:
-                case 'e':
-                    Serial.print("  ");
-                    break;
-                case 'w':
-                    Serial.print("W ");
-                    break;
-                default:
-                    Serial.print(campo[i][j]);
-                    Serial.print(' ');
-                    break;
-            }
-        }
-        Serial.println();
-    }
-    Serial.println();
-    Serial.println();
-    Serial.println();
+int absolute_dir_to_relative(int abs) {
+    return (abs - dir + 4) % 4;
 }
 
+int relative_dir_to_absolute(int rel) {
+    return (rel + dir) % 4;
+}
+
+int ix(int direction) {
+    switch (direction) {
+        case 0:
+            return 0;
+        case 1:
+            return 1;
+        case 2:
+            return 0;
+        case 3:
+            return -1;
+    }
+}
+
+int iy(int direction) {
+    switch (direction) {
+        case 0:
+            return -1;
+        case 1:
+            return 0;
+        case 2:
+            return 1;
+        case 3:
+            return 0;
+    }
+}
 
 void campo_init()// initialization of maze values 
 {
@@ -146,38 +116,15 @@ void campo_init()// initialization of maze values
 }
 
 
-bool muro_nord()    // ritorna se c'è un muro a NORD
-{                   // ATTENZIONE a NORD nella mappa NON il sensore avanti, il sensore dipende dalla direzione (dir)
+bool muro_abs(int abs) {
+    return muro_rel(absolute_dir_to_relative(abs));
+}
+
+bool muro_rel(int rel) {
     Serial.print(tof_read(1));
     int t0, t1;
-    switch (dir) {
-        case 0:
-            t0 = tof_read(1);
-            t1 = tof_read(2);
-            break;
+    switch (rel) {
         case 1:
-            t0 = tof_read(7);
-            t1 = 255;
-            break;
-        case 2:
-            t0 = tof_read(5);
-            t1 = tof_read(6);
-            break;
-        case 3:
-            if (getOldAngleX() < -15)
-                return false;
-            t0 = tof_read(3);
-            t1 = tof_read(4);
-            break;
-    }
-    printf("");
-    return t0 < 255 || t1 < 255;
-}
-
-bool muro_est() {
-    int t0, t1;
-    switch (dir) {
-        case 3:
             t0 = tof_read(1);
             t1 = tof_read(2);
             break;
@@ -185,11 +132,12 @@ bool muro_est() {
             t0 = tof_read(7);
             t1 = 255;
             break;
-        case 1:
+        case 3:
             t0 = tof_read(5);
             t1 = tof_read(6);
             break;
         case 2:
+            // ocio alle salite/discese
             if (getOldAngleX() < -15)
                 return false;
             t0 = tof_read(3);
@@ -199,91 +147,13 @@ bool muro_est() {
     return t0 < 255 || t1 < 255;
 }
 
-bool muro_sud() {
-    int t0, t1;
-    switch (dir) {
-        case 2:
-            t0 = tof_read(1);
-            t1 = tof_read(2);
-            break;
-        case 3:
-            t0 = tof_read(7);
-            t1 = 255;
-            break;
-        case 0:
-            t0 = tof_read(5);
-            t1 = tof_read(6);
-            break;
-        case 1:
-            if (getOldAngleX() < -15)
-                return false;
-            t0 = tof_read(3);
-            t1 = tof_read(4);
-            break;
-    }
-    return t0 < 255 || t1 < 255;
-}
-
-bool muro_ovest() {
-    int t0, t1;
-    switch (dir) {
-        case 1:
-            t0 = tof_read(1);
-            t1 = tof_read(2);
-            break;
-        case 2:
-            t0 = tof_read(7);
-            t1 = 255;
-            break;
-        case 3:
-            t0 = tof_read(5);
-            t1 = tof_read(6);
-            break;
-        case 0:
-            if (getOldAngleX() < -15)
-                return false;
-            t0 = tof_read(3);
-            t1 = tof_read(4);
-            break;
-    }
-    return t0 < 255 || t1 < 255;
-}
 
 void scan_neighbors() // legge i sensori e modifica la mappa in base a questi
 {
 
-    if (digitalRead(12) == HIGH) //se il pulsante è premuto //CODICE FELIPRO44
-    {
-        motor_break();
-        digitalWrite(2, HIGH);
-        delay(2000); //pausa di sicurezza (no doppi click ecc...)
 
-        while (digitalRead(12) == LOW) //si aspetta che sia premuto di nuovo//CODICE FELIPRO44
-        {
-            /*Serial.print("pos:\t");
-            Serial.print(posx);
-            Serial.print("\t");
-            Serial.println(posy);
-            Serial.print("check:\t");
-            Serial.print(checkx);
-            Serial.print("\t");
-            Serial.println(checky);
-            Serial.println();*/
-        }
-        digitalWrite(2, LOW);
 
-        delay(1800); //pausa di sicurezza (non parte mentre si sta ancora toccando)
-
-        digitalWrite(2, HIGH);
-        delay(200);
-        digitalWrite(2, LOW);
-
-        posx = checkx;
-        posy = checky;
-        dir = 1;
-
-    }
-
+    // piastrella attuale nuova, controllo sotto
     if (campo[posx][posy] == '?') // se il tile/piastrella non era ancora stata esplorata
     {
         int val = analogRead(REFLEX);
@@ -297,70 +167,26 @@ void scan_neighbors() // legge i sensori e modifica la mappa in base a questi
 
     }
 
-    campo[posx + 1][posy + 1] = 'w';      // muri negli angoli
-    campo[posx - 1][posy + 1] = 'w';      // sbagliato, se si forma una stanza salva un muro/colonna in mezzo
-    campo[posx + 1][posy - 1] = 'w';
-    campo[posx - 1][posy - 1] = 'w';
-
     // scannerizza i quattro muri
     // imposta i vicini a muri / sconosciuti / non modifica in base alle conoscenze
 
-    if (muro_nord())         // se c'è muro a nord
-    {
-        //campo[posx-1][posy+1]='w';
-        campo[posx][posy + 1] = 'w'; // imposta la cella a nord a muro
-        //campo[posx+1][posy+1]='w';
-    } else                    // altrimenti
-    {
-        if (campo[posx][posy + 1] != 'p')    // se non è priorità (va modificata solo al passaggio)
-            campo[posx][posy + 1] = 'e';    // impostata a vuota (no muro)
+    for (int d = 0; d < 4; d++) {
+        if (muro_rel(d))         // se c'è muro a nord
+        {
+            //campo[posx-1][posy+1]='w';
+            campo[posx + ix(d)][posy + yi(d)] = 'w'; // imposta la cella a nord a muro
+            //campo[posx+1][posy+1]='w';
+        } else                    // altrimenti
+        {
+            if (campo[posx + ix(d)][posy + iy(d)] != 'p')    // se non è priorità (va modificata solo al passaggio)
+                campo[posx + ix(d)][posy + iy(d)] = 'e';    // impostata a vuota (no muro)
 
-        if (campo[posx][posy + 2] == 0)      // cella successiva // se è sconosciuta
-            campo[posx][posy +
-                        2] = '?';    // impostata a inesplorata (non c'è muro quindi ci si può andare MA non è esplorata)
+            if (campo[posx + ix(d) * 2][posy + iy(d) * 2] == 0)      // cella successiva // se è sconosciuta
+                campo[posx + ix(d) * 2][posy + iy(d) *
+                                               2] = '?';    // impostata a inesplorata (non c'è muro quindi ci si può andare MA non è esplorata)
+        }
     }
 
-
-    if (muro_est()) // vedi sopra
-    {
-        //campo[posx+1][posy-1]='w';
-        campo[posx + 1][posy] = 'w';
-        //campo[posx+1][posy+1]='w';
-    } else {
-        if (campo[posx + 1][posy] != 'p')
-            campo[posx + 1][posy] = 'e';
-
-        if (campo[posx + 2][posy] == 0)
-            campo[posx + 2][posy] = '?';
-    }
-
-
-    if (muro_sud()) // vedi sopra
-    {
-        //campo[posx-1][posy-1]='w';
-        campo[posx][posy - 1] = 'w';
-        //campo[posx+1][posy-1]='w';
-    } else {
-        if (campo[posx][posy - 1] != 'p')
-            campo[posx][posy - 1] = 'e';
-
-        if (campo[posx][posy - 2] == 0)
-            campo[posx][posy - 2] = '?';
-    }
-
-
-    if (muro_ovest()) // vedi sopra
-    {
-        //campo[posx-1][posy-1]='w';
-        campo[posx - 1][posy] = 'w';
-        //campo[posx-1][posy+1]='w';
-    } else {
-        if (campo[posx - 1][posy] != 'p')
-            campo[posx - 1][posy] = 'e';
-
-        if (campo[posx - 2][posy] == 0)
-            campo[posx - 2][posy] = '?';
-    }
 
     if (campo[posx][posy] == 'c') {
         digitalWrite(LED_BUILTIN, HIGH);
@@ -372,8 +198,7 @@ void scan_neighbors() // legge i sensori e modifica la mappa in base a questi
 void found_victim(int kits)//o 1 kit o niente
 {
     // lampeggia
-    for(int i=0;i<4;i++)
-    {
+    for (int i = 0; i < 4; i++) {
         digitalWrite(3, HIGH);
         delay(1000);
         digitalWrite(3, LOW);
@@ -453,10 +278,10 @@ void found_victim(int kits)//o 1 kit o niente
                 break;
         }
         conta_kit++;//ho usato un kit
+    }
 }
 
-void check_for_victims()
-{
+void check_for_victims() {
     int t0 = tof_read(1);
     int t1 = tof_read(2);
     if (t0 < 150 && t1 < 150 && campo[posx][posy] != 'v' && campo[posx][posy] != 's') {
@@ -536,6 +361,21 @@ void gira_180() {
     gira_destra();
 }
 
+void gira(int direction){
+    switch (direction) {
+        case 0:
+            gira_destra();
+            break;
+        case 1:
+            gira_sinistra();
+            break;
+        case 2:
+            gira_180();
+            break;
+    }
+}
+
+
 void avanti() {
     //allinea_muro_bene();
     bool done = move_cm_avoid_black(32);///////////////////////// cm da tyle a tyle
@@ -543,46 +383,18 @@ void avanti() {
     distanzia_muro();
 
     if (done) {
-        switch (dir) // modifica la posizione a seconda della direzione
-        {
-            case 0:
-                posx += 2;
-                break;
-            case 1:
-                posy += 2;
-                break;
-            case 2:
-                posx -= 2;
-                break;
-            case 3:
-                posy -= 2;
-                break;
-        }
+        posx += ix(dir);
+        posy += iy(dir);
     } else {
-        switch (dir) // modifica la piastrella nera a seconda della direzione
-        {
-            case 0:
-                campo[posx + 2][posy] = 'b';
-                break;
-            case 1:
-                campo[posx][posy + 2] = 'b';
-                break;
-            case 2:
-                campo[posx - 2][posy] = 'b';
-                break;
-            case 3:
-                campo[posx][posy - 2] = 'b';
-                break;
-        }
+        // setta la piastrella nera
+        campo[posx + ix(*2dir)][posy + iy(dir)*2] = 'b';
     }
 
     check_for_victims();
-
 }
 
 
-bool priority_path_to(
-        char dest) // trova la casella contenente dest più vicina e imposta il percorso per raggiungerlo a p (priority) non va con b (black)
+bool priority_path_to(char dest) // trova la casella contenente dest più vicina e imposta il percorso per raggiungerlo a p (priority) non va con b (black)
 {
     int dim = 100;
     if (dim <= 0)
@@ -592,7 +404,7 @@ bool priority_path_to(
     int y[dim];
     int prec[dim];
     int i = 0;
-    int lung = 1;
+    int lung = 1
 
     x[0] = posx;
     y[0] = posy;
@@ -693,9 +505,6 @@ bool priority_path_to(
     return true;
 }
 
-bool priority_path_to(int destx, int desty) {
-    return false; // da implementare, praticamente identico a priority_path_to(char dest)
-}
 
 bool esplora() {
     bool finished = false;
@@ -730,100 +539,52 @@ bool esplora() {
                 campo[posx][posy - 1] = 'e';
             }
         } else {
-            if (VA_A_DESTRA) {
-                while (dir_scan < 4 && !trovato) {
-                    switch ((dir + dir_scan + 3) % 4)//direzione robot + direzione scan
-                    {
-                        case 0:
-                            if (campo[posx + 1][posy] != 'w' && campo[posx + 2][posy] ==
-                                                                '?') // priority O se non c'è muro in questa direzione  E  se la casella da quella è sconosciuta
-                            {
-                                trovato = true;
-                            } else {
-                                dir_scan++;
-                            }
-                            break;
 
-                        case 1:
-                            if (campo[posx][posy + 1] != 'w' && campo[posx][posy + 2] ==
-                                                                '?') // se non c'è muro in questa direzione  E  se la casella da quella è sconosciuta
-                            {
-                                trovato = true;
-                            } else {
-                                dir_scan++;
-                            }
-                            break;
+            while (dir_scan < 4 && !trovato) {
+                switch ((dir + (6 - dir_scan) + 3) % 4)//direzione robot + direzione scan
+                {
+                    case 0:
+                        if (campo[posx + 1][posy] != 'w' && campo[posx + 2][posy] ==
+                                                            '?') // priority O se non c'è muro in questa direzione  E  se la casella da quella è sconosciuta
+                        {
+                            trovato = true;
+                        } else {
+                            dir_scan++;
+                        }
+                        break;
 
-                        case 2:
-                            if (campo[posx - 1][posy] != 'w' && campo[posx - 2][posy] ==
-                                                                '?') // se non c'è muro in questa direzione  E  se la casella da quella è sconosciuta
-                            {
-                                trovato = true;
-                            } else {
-                                dir_scan++;
-                            }
-                            break;
+                    case 1:
+                        if (campo[posx][posy + 1] != 'w' && campo[posx][posy + 2] ==
+                                                            '?') // se non c'è muro in questa direzione  E  se la casella da quella è sconosciuta
+                        {
+                            trovato = true;
+                        } else {
+                            dir_scan++;
+                        }
+                        break;
 
-                        case 3:
-                            if (campo[posx][posy - 1] != 'w' && campo[posx][posy - 2] ==
-                                                                '?') // se non c'è muro in questa direzione  E  se la casella da quella è sconosciuta
-                            {
-                                trovato = true;
-                            } else {
-                                dir_scan++;
-                            }
-                            break;
-                    }
+                    case 2:
+                        if (campo[posx - 1][posy] != 'w' && campo[posx - 2][posy] ==
+                                                            '?') // se non c'è muro in questa direzione  E  se la casella da quella è sconosciuta
+                        {
+                            trovato = true;
+                        } else {
+                            dir_scan++;
+                        }
+                        break;
+
+                    case 3:
+                        if (campo[posx][posy - 1] != 'w' && campo[posx][posy - 2] ==
+                                                            '?') // se non c'è muro in questa direzione  E  se la casella da quella è sconosciuta
+                        {
+                            trovato = true;
+                        } else {
+                            dir_scan++;
+                        }
+                        break;
                 }
-
-            } else//sinistra
-            {
-                while (dir_scan < 4 && !trovato) {
-                    switch ((dir + (6 - dir_scan) + 3) % 4)//direzione robot + direzione scan
-                    {
-                        case 0:
-                            if (campo[posx + 1][posy] != 'w' && campo[posx + 2][posy] ==
-                                                                '?') // priority O se non c'è muro in questa direzione  E  se la casella da quella è sconosciuta
-                            {
-                                trovato = true;
-                            } else {
-                                dir_scan++;
-                            }
-                            break;
-
-                        case 1:
-                            if (campo[posx][posy + 1] != 'w' && campo[posx][posy + 2] ==
-                                                                '?') // se non c'è muro in questa direzione  E  se la casella da quella è sconosciuta
-                            {
-                                trovato = true;
-                            } else {
-                                dir_scan++;
-                            }
-                            break;
-
-                        case 2:
-                            if (campo[posx - 1][posy] != 'w' && campo[posx - 2][posy] ==
-                                                                '?') // se non c'è muro in questa direzione  E  se la casella da quella è sconosciuta
-                            {
-                                trovato = true;
-                            } else {
-                                dir_scan++;
-                            }
-                            break;
-
-                        case 3:
-                            if (campo[posx][posy - 1] != 'w' && campo[posx][posy - 2] ==
-                                                                '?') // se non c'è muro in questa direzione  E  se la casella da quella è sconosciuta
-                            {
-                                trovato = true;
-                            } else {
-                                dir_scan++;
-                            }
-                            break;
-                    }
-                }
-                dir_scan = (6 - dir_scan) % 4;
             }
+            dir_scan = (6 - dir_scan) % 4;
         }
 
         if (!trovato) {
@@ -837,21 +598,7 @@ bool esplora() {
                     return false;//Nessun percorso per s trovato
             }
         } else {
-            /*switch(dir_scan)
-            {
-            case 0:
-                gira_destra();
-                break;
-            case 1:
-                avanti();
-                break;
-            case 2:
-                gira_sinistra();
-                break;
-            case 3:
-                gira_destra();
-                break;
-            }*/
+
             switch (dir_scan % 4) {
                 case 0:
                     gira_destra();
@@ -870,4 +617,75 @@ bool esplora() {
         }
     }
     return true;
+}
+
+
+//prints on serial a "graphic" visualization of the mapped maze
+void campo_stampa() {
+    int i1 = 0;
+    int i2 = dim_campo - 1;
+    int j1 = 0;
+    int j2 = dim_campo - 1;
+    int i, j;
+    i = 0;
+    bool c = true;//clear
+    while (c) {
+        for (j = 0; j < dim_campo; j++) {
+            if (campo[i1][j])
+                c = false;
+        }
+        if (c)
+            i1++;
+    }
+    c = true;
+    while (c) {
+        for (j = 0; j < dim_campo; j++) {
+            if (campo[i2][j])
+                c = false;
+        }
+        if (c)
+            i2--;
+    }
+
+    c = true;//clear
+    while (c) {
+        for (i = 0; i < dim_campo; i++) {
+            if (campo[i][j1])
+                c = false;
+        }
+        if (c)
+            j1++;
+    }
+    c = true;
+    while (c) {
+        for (i = 0; i < dim_campo; i++) {
+            if (campo[i][j2])
+                c = false;
+        }
+        if (c)
+            j2--;
+    }
+
+    for (i = i1; i <= i2; i++) {
+        for (j = j1; j <= j2; j++) {
+            //Serial.print((campo[i][j])?campo[i][j]:' ');   // inizializza il campo a 0 (sconosciuto)
+            switch (campo[i][j]) {
+                case 0:
+                case 'e':
+                    Serial.print("  ");
+                    break;
+                case 'w':
+                    Serial.print("W ");
+                    break;
+                default:
+                    Serial.print(campo[i][j]);
+                    Serial.print(' ');
+                    break;
+            }
+        }
+        Serial.println();
+    }
+    Serial.println();
+    Serial.println();
+    Serial.println();
 }

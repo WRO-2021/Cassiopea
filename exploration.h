@@ -16,15 +16,22 @@
 
 
 void campo_init();
+
 void campo_stampa();
 
-bool muro_nord();
-bool muro_est();
-bool muro_sud();
-bool muro_ovest();
+int absolute_dir_to_relative(int abs);
+
+int relative_dir_to_absolute(int rel);
+
+bool muro_abs(int abs);
+bool muro_rel(int rel);
+int ix(int direction);
+int iy(int direction);
 
 void scan_neighbors();
+
 void found_victim(int kits);
+
 void check_for_victims();
 
 void gira_destra();
@@ -32,11 +39,11 @@ void gira_sinistra();
 void gira_180();
 void avanti();
 
+void gira(int direction);
+
 bool priority_path_to(char dest);
-bool priority_path_to(int destx, int desty);
 
 bool esplora();
-
 
 
 #endif

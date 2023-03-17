@@ -34,24 +34,13 @@ p : priority
 
 
 destra - right
-sinistra - left 
+sinistra - left
 avanti - straight
 dietro - back
 */
 
-
-static Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X); //color sensor
-static Adafruit_MLX90614 mlx = Adafruit_MLX90614(); //temperature sensor
-
-static int soglia_calore;
-
-static int conta_kit;
-
-static int checkx, checky;
-
-static char campo[100][100]; // campo means maze, that's the map
-static int dim_campo;      // dimensione dell'array campo
-static int posx, posy;     // posizione x, posizione y
+static char campo[400][400]; // campo di gioco
+static int posX, posY;     // posizione x, posizione y
 // 0,0 basso sinistra
 static int dir;//direzione in cui guarda il robot            // direzione 0 est, 1 nord, 2 ovest, 3 sud notazine di stafano, è cambiata
 
@@ -311,6 +300,8 @@ void gira(int direction){
         case 2:
             gira_180();
             break;
+        default:
+            break;
     }
 }
 
@@ -442,139 +433,4 @@ bool priority_path_to(char dest) // trova la casella contenente dest più vicina
         i = prec[i];
     }
     return true;
-}
-
-
-bool esplora() {
-    bool finished = false;
-
-    while (!finished) {
-
-        // modalità esplorazione
-        // ci si basa su ciò che si ha intorno per procedere (celle conosiute o sconosiute)
-        // se tutte conosciute si entra in modalità ricerca percorso per la sconosciuta più vicina o, se non ce ne sono, per start
-
-        //exploration mode
-        scan_neighbors();
-        int dir_scan = 0;
-        bool trovato = false;
-
-        if (campo[posx + 1][posy] == 'p' ||
-            campo[posx][posy + 1] == 'p' ||
-            campo[posx - 1][posy] == 'p' ||
-            campo[posx][posy - 1] == 'p') {
-            trovato = true;
-            if (campo[posx + 1][posy] == 'p') {
-                dir_scan = (8 - dir + 1 + 0) % 4;
-                campo[posx + 1][posy] = 'e';
-            } else if (campo[posx][posy + 1] == 'p') {
-                dir_scan = (8 - dir + 1 + 1) % 4;
-                campo[posx][posy + 1] = 'e';
-            } else if (campo[posx - 1][posy] == 'p') {
-                dir_scan = (8 - dir + 1 + 2) % 4;
-                campo[posx - 1][posy] = 'e';
-            } else if (campo[posx][posy - 1] == 'p') {
-                dir_scan = (8 - dir + 1 + 3) % 4;
-                campo[posx][posy - 1] = 'e';
-            }
-        } else {
-
-            while (dir_scan < 4 && !trovato) {
-                int tmp_dir = (dir + (6 - dir_scan) + 3) % 4;
-                if (campo[posx + ix(tmp_dir)][posy + iy(tmp_dir)] == 'w' && campo[posx + 2 * ix(tmp_dir)][posy + 2 * iy(tmp_dir)] == '?') {
-                    trovato = true;
-                } else {
-                    dir_scan++;
-                }
-            }
-            dir_scan = (6 - dir_scan) % 4;
-        }
-
-        if (!trovato) {
-            //ricerca percorso
-            if (!priority_path_to('?')) {
-                //Nessun percorso per ? trovato
-                if (campo[posx][posy] == 's')
-                    return true;
-
-                if (!priority_path_to('s'))
-                    return false;//Nessun percorso per s trovato
-            }
-        } else {
-            gira(dir_scan % 4);
-            avanti();
-        }
-    }
-    return true;
-}
-
-
-//prints on serial a "graphic" visualization of the mapped maze
-void campo_stampa() {
-    int i1 = 0;
-    int i2 = dim_campo - 1;
-    int j1 = 0;
-    int j2 = dim_campo - 1;
-    int i, j;
-    i = 0;
-    bool c = true;//clear
-    while (c) {
-        for (j = 0; j < dim_campo; j++) {
-            if (campo[i1][j])
-                c = false;
-        }
-        if (c)
-            i1++;
-    }
-    c = true;
-    while (c) {
-        for (j = 0; j < dim_campo; j++) {
-            if (campo[i2][j])
-                c = false;
-        }
-        if (c)
-            i2--;
-    }
-
-    c = true;//clear
-    while (c) {
-        for (i = 0; i < dim_campo; i++) {
-            if (campo[i][j1])
-                c = false;
-        }
-        if (c)
-            j1++;
-    }
-    c = true;
-    while (c) {
-        for (i = 0; i < dim_campo; i++) {
-            if (campo[i][j2])
-                c = false;
-        }
-        if (c)
-            j2--;
-    }
-
-    for (i = i1; i <= i2; i++) {
-        for (j = j1; j <= j2; j++) {
-            //Serial.print((campo[i][j])?campo[i][j]:' ');   // inizializza il campo a 0 (sconosciuto)
-            switch (campo[i][j]) {
-                case 0:
-                case 'e':
-                    Serial.print("  ");
-                    break;
-                case 'w':
-                    Serial.print("W ");
-                    break;
-                default:
-                    Serial.print(campo[i][j]);
-                    Serial.print(' ');
-                    break;
-            }
-        }
-        Serial.println();
-    }
-    Serial.println();
-    Serial.println();
-    Serial.println();
 }

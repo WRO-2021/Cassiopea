@@ -1,7 +1,11 @@
 #include "motors.h"
 #include "movements.h"
 #include "exploration.h"
+#include "tof.h"
+#include "kit.h"
+#include "maze.h"
 
+maze campo;
 
 void setup() {
     pinMode(LED_BUILTIN, OUTPUT);
@@ -24,6 +28,8 @@ void setup() {
     Serial.println("Started");
 
     Serial.println("TOFs initialization");
+    for(int i=1; i<8; i++)
+        tof.get_instance(i);
 
 
     Serial.println("IMU initialization");
@@ -31,6 +37,7 @@ void setup() {
         Serial.println("Failed to initialize IMU!");
         while (1);
     }
+
     Serial.println("Gyroscope calibration... do not move the IMU");
     gyro_calibrate(500);
 
@@ -41,10 +48,8 @@ void setup() {
     //tof check
     Serial.println("tof check");
     for (int i = 1; i < 8; i++) {
-        int dis = tof_read(i);
-        if (dis == -1) {
-            tof_conf(i);
-        }
+        int dis = tof.get_instance(i).read();
+        if (dis == -1) tof.get_instance(i).conf();
     }
 
     Serial.println("Setup done");
@@ -57,7 +62,7 @@ void setup() {
     servo_kit.attach(5);
     servo_kit.write(95);
 
-    campo_init();
+    campo = maze();
 
     allinea_muro();
     distanzia_muro();
@@ -84,9 +89,7 @@ void loop() {
             delay(200);
             digitalWrite(2, LOW);
 
-            posx = checkx;
-            posy = checky;
-            dir = 0;
+            maze.goto_checkpoint();
         }
 
     }

@@ -19,6 +19,7 @@ public:
 
     int read();
     int read_with_offset();
+    void conf();
 
     static tof get_instance(uint8_t index);
     static tof get_in_direction(int direction, int num=0);
@@ -28,7 +29,6 @@ private:
     VL6180X sensor;
 
     void mux();
-    void conf();
 
     static int tof_offset[];
     static vector<tof> instances;

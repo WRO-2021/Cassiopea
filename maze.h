@@ -40,6 +40,8 @@ public:
     void rotate(int direction);
     void goto_next_cell();
 
+    String to_string();
+
 private:
     vector<vector<char>> field;
     int x, y;

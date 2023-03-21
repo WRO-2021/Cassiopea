@@ -149,3 +149,14 @@ void maze::goto_next_cell() {
 void maze::rotate(int direction) {
     this->direction = (this->direction + direction + 4) % 4;
 }
+
+String maze::to_string() {
+    String s = "";
+    for (int i = 0; i < field.size(); i++) {
+        for (int j = 0; j < field[i].size(); j++) {
+            s += field[i][j];
+        }
+        s += '\n';
+    }
+    return s;
+}

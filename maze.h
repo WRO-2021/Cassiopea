@@ -16,7 +16,6 @@
  * The maze is a square with a size of 200x200.
  *
  * legend:
- * ' ': empty space
  * '#': wall
  * 'X': visited
  * 'S': start
@@ -33,10 +32,19 @@ public:
     ~maze();
     void set_wall(int direction, bool wall);
     vector<int> get_moves();
+
+    void set_black(int direction);
+    void set_checkpoint();
+    void goto_checkpoint();
+
+    void rotate(int direction);
+    void goto_next_cell();
+
 private:
     vector<vector<char>> field;
     int x, y;
     int direction;
+    int checkpoint_x, checkpoint_y;
 
     static int ix(int direction);
     static int iy(int direction);
@@ -44,6 +52,7 @@ private:
     static int relative_dir_to_absolute(int rel);
 
     char get_cell(int direction, int steps);
+    bool is_cell_visitable(int x, int y, int direction, int steps);
 };
 
 

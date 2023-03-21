@@ -15,6 +15,9 @@ maze::maze() {
     y = size / 2;
     direction = 0;
 
+    checkpoint_x = x;
+    checkpoint_y = y;
+
     // set all the corners
     for (int i = 1; i < size; i+=2) {
         for (int j = 1; j < size; j+=2) {
@@ -59,7 +62,7 @@ void maze::set_wall(int direction, bool wall) {
     int abs = relative_dir_to_absolute(direction);
     int dx = ix(abs);
     int dy = iy(abs);
-    field[y + dy][x + dx] = wall ? '#' : ' ';
+    field[y + dy][x + dx] = wall ? '#' : 'W';
 }
 
 vector<int> maze::get_moves() {
@@ -82,9 +85,10 @@ vector<int> maze::get_moves() {
         }
 
         for (int i = 0; i < 4; i++) {
-            int dx = ix(i);
-            int dy = iy(i);
-            if (field[tmpY + dy][tmpX + dx] == ' ' && visited.find(make_pair(x + dx, y + dy)) == visited.end()) {
+            if (is_cell_visitable(tmpX, tmpY, i, 2) &&
+                is_cell_visitable(tmpX, tmpY, i, 1) &&
+                visited.find(make_pair(x + dx, y + dy)) == visited.end() // cell not visited
+                ) {
                 visited.insert(make_pair(x + dx, y + dy));
                 vector<int> new_path = path;
                 new_path.push_back(i);
@@ -112,4 +116,36 @@ char maze::get_cell(int direction, int steps) {
     int dx = ix(abs);
     int dy = iy(abs);
     return field[y + dy * steps][x + dx * steps];
+}
+
+bool maze::is_cell_visitable(int x, int y, int direction, int steps) {
+    int dx = ix(direction);
+    int dy = iy(direction);
+    char cell = field[y + dy * steps][x + dx * steps];
+    return cell == ' ' || cell == 'V' || cell == 'S' || cell == 'W';
+}
+
+void maze::set_black(int direction) {
+    field[y yp(direction)*2][x ix(direction)*2] = 'B';
+}
+
+void maze::set_checkpoint() {
+    checkpoint_x = x;
+    checkpoint_y = y;
+}
+
+void maze::goto_checkpoint() {
+    x = checkpoint_x;
+    y = checkpoint_y;
+    direction = 0;
+}
+
+void maze::goto_next_cell() {
+    x += ix(direction)*2;
+    y += iy(direction)*2;
+    field[y][x] = 'W';
+}
+
+void maze::rotate(int direction) {
+    this->direction = (this->direction + direction + 4) % 4;
 }

@@ -3,7 +3,7 @@
 /*
  * codice di stefano
  *
- * va bene, e' un casino ma funzione benissimo, e' quello
+ * va bene, e' un casino ma funzione benissimo(?), e' quello
  * che fa andare bene il robot, ci sono molte costanti
  * trovate a tentativi perche' sia preciso
  */
@@ -344,7 +344,7 @@ void distanzia_muro() {
 
 
 void allinea_muro() {
-    motor_break();
+    motor_break()
     motor_set_speed_both(85);//80
     int s0;
     int s1;

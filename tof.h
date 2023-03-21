@@ -1,5 +1,5 @@
-#ifndef tof_h
-#define tof_h
+#ifndef CASSIOPEA_TOF_H
+#define CASSIOPEA_TOF_H
 
 #include <Arduino.h>
 #include <Wire.h>
@@ -13,6 +13,25 @@ int tof_read(uint8_t sens);
 
 void tof_conf(uint8_t sens);
 
-void tof_conf_all();
+class tof{
+public:
+    tof(uint8_t bus);
 
-#endif
+    int read();
+    int read_with_offset();
+
+    static tof get_instance(uint8_t index);
+    static tof get_in_direction(int direction, int num=0);
+
+private:
+    uint8_t bus;
+    VL6180X sensor;
+
+    void mux();
+    void conf();
+
+    static int tof_offset[];
+    static vector<tof> instances;
+};
+
+#endif // CASSIOPEA_TOF_H

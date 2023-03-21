@@ -6,10 +6,6 @@
 #include "motors.h"
 #include "tof.h"
 
-#define REFLEX 6
-#define BLACK_WHITE_THESHOLD 50
-#define WHITE_SILVER_THESHOLD 215
-
 float getOldAngleX();
 
 void move_cm(int cm);

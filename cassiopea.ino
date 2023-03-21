@@ -18,15 +18,13 @@ void setup() {
     digitalWrite(LED_G, HIGH);
     digitalWrite(LED_B, HIGH);
 
-    pinMode(REFLEX, INPUT);
-
     Wire.begin();
     Serial.begin(115200);
     //while (!Serial);
     Serial.println("Started");
 
     Serial.println("TOFs initialization");
-    tof_conf_all();
+
 
     Serial.println("IMU initialization");
     if (!IMU.begin()) {
@@ -55,8 +53,6 @@ void setup() {
 
     ////////////////////////////////
 
-    tcs.begin();//color
-    mlx.begin();//temperature
     // set serve kit
     servo_kit.attach(5);
     servo_kit.write(95);
